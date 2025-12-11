@@ -1,0 +1,50 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+/// Roles de usuario
+enum Rol {
+  ADMIN
+  USUARIO
+}
+
+/// Estados posibles de una solicitud
+enum EstadoSolicitud {
+  PENDIENTE
+  APROBADO
+  RECHAZADO
+}
+
+/// Usuarios del sistema
+model Usuario {
+  id            Int         @id @default(autoincrement())
+  nombre        String
+  email         String      @unique
+  password      String /// Contraseña hasheada con Argon2
+  rol           Rol         @default(USUARIO)
+  creadoEn      DateTime    @default(now())
+  actualizadoEn DateTime    @updatedAt
+  solicitudes   Solicitud[] /// Relación 1:N con Solicitud
+}
+
+/// Solicitudes creadas por los usuarios
+model Solicitud {
+  id            Int             @id @default(autoincrement())
+  titulo        String
+  descripcion   String
+  estado        EstadoSolicitud @default(PENDIENTE)
+  usuarioId     Int
+  usuario       Usuario         @relation(fields: [usuarioId], references: [id])
+  creadoEn      DateTime        @default(now())
+  actualizadoEn DateTime        @updatedAt
+
+  /// Índices para optimizar consultas frecuentes
+  @@index([estado])
+  @@index([usuarioId])
+  @@index([usuarioId, estado]) /// Opcional: index compuesto para búsquedas filtradas por usuario y estado
+}

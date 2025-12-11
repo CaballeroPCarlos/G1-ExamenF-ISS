@@ -1,64 +1,69 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+"use client";
+
+import { useEffect, useState } from "react";
+
+import CardLink from "@/components/CardLink";
+import AlertMessage from "@/components/AlertMessage";
+
+import styles from "@/styles/page.module.css";
 
 export default function Home() {
+  const [usuario, setUsuario] = useState(null);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Intentar obtener usuario desde sessionStorage
+    const storedUser = sessionStorage.getItem("usuario");
+
+    if (!storedUser) {
+      setError("No autenticado. Redirigiendo a login...");
+      setTimeout(() => (window.location.href = "/login"), 1500);
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const parsedUser = JSON.parse(storedUser);
+      setUsuario(parsedUser);
+    } catch (err) {
+      console.error("Error al leer usuario:", err);
+      setError("Error al procesar usuario. Redirigiendo a login...");
+      setTimeout(() => (window.location.href = "/login"), 1500);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  if (loading) {
+    return <p style={{ textAlign: "center", marginTop: "50px" }}>Cargando...</p>;
+  }
+  if (!usuario) {
+    return <AlertMessage type="error" message={error || "No autenticado"} />;
+  }
+
   return (
     <div className={styles.page}>
       <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className={styles.intro}>
-          <h1>To get started, edit the page.js file.</h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+        <h1>Bienvenido, {usuario.nombre}!</h1>
+        <p>
+          Tu rol: <strong>{usuario.rol}</strong>
+        </p>
+
+        <div className={styles.links}>
+          <CardLink
+            href="/solicitudes"
+            title="Gestionar Solicitudes"
+            description="Crear, actualizar y eliminar solicitudes."
+          />
+
+          {usuario.rol === "ADMIN" && (
+            <CardLink
+              href="/admin"
+              title="Sección Administrativa"
+              description="Accede a funciones de administración."
             />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          )}
         </div>
       </main>
     </div>
